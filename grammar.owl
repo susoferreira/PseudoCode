@@ -1,0 +1,77 @@
+#using owl.v4
+.whitespace ' ' '\t'
+program = stmt-list
+stmt-list = stmt*
+newline='\n'
+#IMPORTANTE EN PSEUDOCODIGO SE PUEDEN MANDAR ARRAYS POR VALOR (COPIAS)
+# hay que especificar todas las newlines
+# (excepto cuando justo despues va un stmt o stmt-list porque las newlines son stmt 
+stmt =
+    '\n':newline
+     ['ALGORITMO' identifier@program-name newline* variable-declaration-block stmt-list 'FIN' ] : program-declarations
+    ['FUNCION' function-header identifier@return_type newline variable-declaration-block stmt-list 'FIN_FUNCION' ] : function
+    ['PROCEDIMIENTO' function-header newline variable-declaration-block  stmt-list 'FIN_PROCEDIMIENTO' ] : procedure
+    identifier '<-' expr: assignment
+    expr\:negate\:parens@array '.' identifier '<-' expr : field-assignment
+    expr\:negate\:parens@array [ '[' expr@lookup ']' ] '<-' expr : lookup-assignment
+    
+'DEVOLVER' expr : return
+    [ 'SI' expr 'ENTONCES'?  stmt-list
+      ('SI_NO' 'ENTONCES'? stmt-list@else-stmts)? 'FIN_SI' ] : if-then
+    [ 'MIENTRAS' expr 'HACER' stmt-list 'FIN_MIENTRAS' ] : while
+    [ 'DESDE' (identifier@var '<-')? expr@value 'HASTA'  expr   ('PASO' expr@step)? "HACER" stmt-list 'FIN_DESDE' ] : for
+    ['CASO' expr 'SEA' newline (expr@val ':'  stmt-list newline )* ('SI_NO' ':'? stmt-list@case_default) newline 'FIN_CASO']: case
+    'break' : break
+    'continue' : continue
+    expr\:negate\:parens : expr
+  
+
+
+function-header = identifier@name parameter-list@parameters
+
+variable-declaration-block = (variables-block | tipos-block )+ '\n'* 'INICIO'
+
+variables-block = variable-start-tokens variable-declaration{'\n',1+} '\n'
+tipos-block = tipos-start-tokens struct-declaration{'\n',1+}
+tipos-start-tokens = ('TIPO'|'TIPOS') '\n'
+variable-start-tokens = ('VARIABLE'|'VARIABLES') '\n'
+struct-declaration = (identifier@struct_name '=' 'REGISTRO' '\n' variable-declaration{'\n',1+} '\n'  'FIN_REGISTRO' '\n')
+variable-declaration = (identifier@var_name{',',1+} ':' identifier@var_type ('=' expr@initial_value)?  )
+
+expr =
+    string : string
+    number : number
+    'true' : true
+    'false' : false
+    identifier : variable
+    [ '(' expr? ')' ] : parens
+    [ '{' (expr{',',1+} ','?)? '}' ] : array-values
+  .operators postfix
+    [ '(' expr{','} ')' ] : call 
+    [ '[' expr ']' ] : lookup
+    '.' identifier : field
+  .operators prefix
+    '-' : negate
+    '!' : not
+  .operators infix left
+    '*' : times
+    '/' : divided-by
+    'MOD' : modulus
+  .operators infix left
+    '+' : plus
+    '-' : minus
+  .operators infix left
+    '=' : equal-to
+    '<>' : not-equal-to
+    '<' : less-than
+    '>' : greater-than
+    '<=' : less-than-or-equal-to
+    '>=' : greater-than-or-equal-to
+  .operators infix left
+    'y' : and
+  .operators infix left
+    'o' : or
+parameter-list =
+    [ '(' (identifier@E-S identifier@var-type ':' identifier@var_name){','} ')' ]
+
+.line-comment-token '//'

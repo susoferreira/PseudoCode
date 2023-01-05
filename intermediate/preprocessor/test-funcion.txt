@@ -1,0 +1,21 @@
+ALGORITMO absoluto
+VARIABLES
+    valor, absoluto : Entero
+INICIO
+    LEER (valor)
+    absoluto <- obter_abs(valor)
+    ESCRIBIR (valor, absoluto)
+FIN
+
+ FUNCION obter_abs (E Entero: x ) Entero
+VARIABLE
+    valor : Entero
+INICIO
+    SI x < 0 ENTONCES
+        valor <- -1 * x
+    SI_NO
+        valor <- x
+    FIN_SI
+    ESCRIBIR (valor)
+    DEVOLVER (valor)
+FIN_FUNCION
