@@ -8,12 +8,15 @@
 
 
 
+
+
+
     {
         "name": "(gdb) built generator binary",
         "type": "cppdbg",
         "request": "launch",
         "program": "${workspaceRoot}/build/generator" ,
-        "args": ["tests/test-funcion.txt"],
+        "args": ["tests/test_procedimiento.txt"],
         "stopAtEntry": false,
         "cwd": "${workspaceRoot}",
         "environment": [],

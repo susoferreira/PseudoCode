@@ -1,7 +1,7 @@
 ALGORITMO TEST2
 VARIABLES
     suma : ENTERO
-    stop : BOOLEANO
+    stop : LOGICO
     n : ENTERO
 INICIO
     suma <- 0

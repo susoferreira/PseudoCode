@@ -7,7 +7,8 @@ INICIO
     intercambiar (v1, v2)
     ESCRIBIR (v1, v2)
 FIN
-PROCEDIMIENTO intercambiar (E Entero: a,E Entero : b)
+
+PROCEDIMIENTO intercambiar (E/S Entero: a,E/S Entero : b)
 VARIABLE
     temp : Entero
 INICIO
@@ -15,3 +16,4 @@ INICIO
     a <- b
     b <- temp
 FIN_PROCEDIMIENTO
+

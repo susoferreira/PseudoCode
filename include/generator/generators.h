@@ -14,7 +14,7 @@ sds generate_variable_declaration_block(struct parsed_variable_declaration_block
 sds generate_program_declarations(struct parsed_stmt statement);
 sds generate_array_values(struct parsed_expr array);
 sds generate_expr(struct owl_ref expr);
-sds generate_parameter(sds e_s, sds var_type, sds var_name);
+sds generate_parameter(bool is_reference, sds var_type, sds var_name);
 sds generate_parameter_list(struct parsed_parameter_list par);
 sds generate_function_header(struct parsed_function_header header);
 sds generate_function(struct parsed_stmt func);

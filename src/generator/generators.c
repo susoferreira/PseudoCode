@@ -7,11 +7,23 @@
 sds get_identifier_text(struct owl_ref identifier){
     struct parsed_identifier id = parsed_identifier_get(identifier);
     
-    char buf[id.length];
+    char buf[id.length+1];
+    buf[id.length]=0x00; //colocando el null byte porque c no lo hace solo (?)
     for(int i=0;i<id.length;i++){
         buf[i]=id.identifier[i];
     }
     return sdsnew(buf);
+}
+//si, es un copia-pega
+sds get_string_text(struct owl_ref identifier){
+    struct parsed_string id =parsed_string_get(identifier);
+    
+    char buf[id.length+1];
+    buf[id.length]=0x00; //colocando el null byte porque c no lo hace solo (?)
+    for(int i=0;i<id.length;i++){
+        buf[i]=id.string[i];
+    }
+    return sdscat(sdscat(sdsnew("\""),sdsnew(buf)),"\"");
 }
 
 
@@ -35,36 +47,62 @@ sds generate_return(struct parsed_stmt statement){
 
 sds generate_variable_declaration(struct parsed_variable_declaration var){
     const char* var_type = get_identifier_text(var.var_type);
-    const char* var_name = get_identifier_text(var.var_name);
-    if (var.initial_value.empty){
-        return sdscatprintf(sdsempty(),"%s %s;",var_type,var_name);
-    }else{
-    char* var_initial_value = generate_expr(var.initial_value);
 
-        return sdscatprintf(sdsempty(),"%s %s = %s;",var_type,var_name,var_initial_value);
+    //puede haber más de una variable declarada a la vez
+    sds var_names = sdsempty();
+    while(!var.var_name.empty){
+        const char* var_name = get_identifier_text(var.var_name);
+        var_names = sdscatprintf(var_names,"%s, ",var_name);
+        var.var_name=owl_next(var.var_name);
+    }
+
+    var_names=sdstrim(var_names,", ");// remove trailing comma and whitespace
+
+
+    if (var.initial_value.empty){
+
+        return sdscatprintf(sdsempty(),"%s %s;",var_type,var_names);
+    }else{
+
+        char* var_initial_value = generate_expr(var.initial_value);
+        return sdscatprintf(sdsempty(),"%s %s = %s;",var_type,var_names,var_initial_value);
     }
 }
 
 sds generate_variables_block(struct parsed_variables_block var){
-    //si, no hace nada excepto desempaquetar los datos
-    return generate_variable_declaration(parsed_variable_declaration_get(var.variable_declaration));
+    sds result=sdsempty();
+    while(!var.variable_declaration.empty){
+        
+        result = sdscatprintf(result,"%s\n",
+            generate_variable_declaration(
+                parsed_variable_declaration_get(var.variable_declaration)));
+        var.variable_declaration = owl_next(var.variable_declaration);
+    }
+    return result;
 }
 
 sds generate_tipos_block(struct parsed_tipos_block tipos){
-    sds result = sdsempty();
 
+    sds variables=sdsempty();
     if (!tipos.struct_declaration.empty){
-        char* start="typedef struct {\n";
-        struct  parsed_struct_declaration structure = parsed_struct_declaration_get(tipos.struct_declaration);
-        result = sdscatprintf(start,"%s\n",get_identifier_text(structure.struct_name));
-    
+        struct  parsed_struct_declaration structure = parsed_struct_declaration_get(tipos.struct_declaration);    
         while(!tipos.struct_declaration.empty){
-            result = sdscatprintf(result,"%s\n",generate_variable_declaration(parsed_variable_declaration_get(structure.variable_declaration)));
+            
+            while(!structure.variable_declaration.empty){
+                
+                variables = sdscatprintf(variables,"%s\n",generate_variable_declaration(parsed_variable_declaration_get(structure.variable_declaration)));
+                structure.variable_declaration = owl_next(structure.variable_declaration);
+            }
+
             tipos.struct_declaration = owl_next(tipos.struct_declaration);
         }
-        result = sdscatprintf(result,"\n}%s",get_identifier_text(structure.struct_name));
+        
+    return sdscatprintf(sdsempty(),"typedef struct{\n%s}%s;",
+        variables,
+        get_identifier_text(structure.struct_name)
+        );
     }
-    return result;
+    return "// Posible error, el bloque TIPOS ESTABA VACÍO";
 }
 
 sds generate_variable_declaration_block(struct parsed_variable_declaration_block vars){
@@ -103,7 +141,7 @@ sds generate_program_declarations(struct parsed_stmt statement){
     //sds program_name = sdsnew(º(statement.program_name).identifier);
     sds var = generate_variable_declaration_block(parsed_variable_declaration_block_get(statement.variable_declaration_block));
     sds stmt_list = generate_statement_list(parsed_stmt_list_get(statement.stmt_list));
-    return sdscatprintf(sdsempty(),"//algoritmo %s\n %s\n%s",program_name,var,stmt_list);
+    return sdscatprintf(sdsempty(),"//algoritmo %s\nint main(int argc,char* argv[]){\n%s\n%s}",program_name,var,stmt_list);
 }
 
 
@@ -118,15 +156,32 @@ sds generate_array_values(struct parsed_expr array){
     return result;
 }
 
+sds generate_function_call(struct parsed_expr call){
+    if (call.expr.empty){
+        return sdscatprintf(sdsempty(),"%s()",generate_expr(call.operand));
+
+    }else{
+        sds parameters = sdsempty();
+        while(!call.expr.empty){
+            parameters = sdscatprintf(parameters,"%s,",generate_expr(call.expr));
+            call.expr = owl_next(call.expr);
+        }
+        parameters = sdstrim(parameters,","); // remove trailing comma
+        return sdscatprintf(sdsempty(),"%s(%s)",generate_expr(call.operand),parameters);
+    }
+}
+
 sds generate_expr(struct owl_ref expr){
     struct parsed_expr exp = parsed_expr_get(expr);
 
     switch(exp.type){
         case PARSED_STRING:
-            return sdsnew(parsed_string_get(exp.string).string);
+            return sdsnew(get_string_text(exp.string));
             break;
         case PARSED_NUMBER:
-            return sdscatprintf(sdsempty(),"%f",parsed_number_get(exp.number).number);
+            double number = parsed_number_get(exp.number).number;
+            if (number == (int) number) return sdscatprintf(sdsempty(),"%d", (int) number);
+            else return sdscatprintf(sdsempty(),"%f", number);
             break;
         case PARSED_TRUE:
             return sdsnew("true"); //hay que definir true y false con #define
@@ -145,7 +200,7 @@ sds generate_expr(struct owl_ref expr){
             return generate_array_values(exp);
             break;
         case PARSED_CALL:
-            return generate_expr(exp.expr);
+            return generate_function_call(exp);
             break;
         case PARSED_LOOKUP:
             return generate_expr(exp.expr);
@@ -204,33 +259,49 @@ sds generate_expr(struct owl_ref expr){
     }
 }
 
-sds generate_parameter(sds e_s, sds var_type, sds var_name){
-    if (strcmp(e_s,"E/S")==0){
+sds generate_parameter(bool is_reference, sds var_type, sds var_name){
 
-        return sdscatprintf(sdsempty(),"%s& %s",var_type,var_name);
-
-    }else if(strcmp(e_s,"E")==0){
-
-        return sdscatprintf(sdsempty(),"%s %s",var_type,var_name);
-
-    }else{
-        printf("ERROR en parametros de una función:posibles valores son 'E/S' o 'E', %s no es un valor aceptado",
-        e_s);
-        exit(-1);
-    }
+        if (is_reference){
+            return sdscatprintf(sdsempty(),"%s& %s",var_type,var_name);
+        }else{
+            return sdscatprintf(sdsempty(),"%s %s",var_type,var_name);
+        }
 }
 
 sds generate_parameter_list(struct parsed_parameter_list par){
 
     sds result = sdsnew("(");
     while (!par.var_name.empty){
-        sds e_s = get_identifier_text(par.E_S);
+        bool in;
+        bool out;
         sds var_type = get_identifier_text(par.var_type);
         sds var_name = get_identifier_text(par.var_name);
-        result = sdscatprintf(result,"%s,", generate_parameter(e_s,var_type,var_name));
+        if(!par.E.empty){
+            //comprobar que aunque no esté vacío el texto es E
+            if (strcmp(get_identifier_text(par.E),"E")!=0){
+                printf("Error en la declaración de  '<error> %s %s': las opciones correctas son E/S y E ",var_type,var_name);
+                exit(-1);
+            }
+            in = true;
+        }
+        if(!par.S.empty){
+            //comprobar que aunque no esté vacío el texto es S
+            if (strcmp(get_identifier_text(par.S),"S")!=0){
+                printf("Error en la declaración de  '<error> %s %s': las opciones correctas son E/S y E ",var_type,var_name);
+                exit(-1);
+            }
+            out = true;
+        }
+        
+        if(out && !in){
+            printf("watefok lmao una variable de solo salida que te pasa bro");
+        }  
+
+        result = sdscatprintf(result,"%s,", generate_parameter(out,var_type,var_name));
         par.var_name=owl_next(par.var_name);
         par.var_type=owl_next(par.var_type);
-        par.E_S=owl_next(par.E_S);
+        par.E=owl_next(par.E);
+        par.S=owl_next(par.S);
     }
         result=sdstrim(result,",");// remove trailing comma
         return sdscat(result,")");
@@ -263,14 +334,14 @@ sds generate_procedure(struct parsed_stmt proc){
 sds generate_assignment(struct parsed_stmt assign){
     char* var_name = get_identifier_text(assign.identifier);
     char* value = generate_expr(assign.expr);
-    return sdscatprintf(sdsempty(),"%s = %s\n",var_name,value);
+    return sdscatprintf(sdsempty(),"%s = %s;\n",var_name,value);
 }
 
 sds generate_field_assignment(struct parsed_stmt assign){
     char* field = get_identifier_text(assign.identifier);
     char* value = generate_expr(assign.expr);
     char* array = generate_expr(assign.array);
-    return sdscatprintf(sdsempty(),"%s.%s = %s\n",array,field,value);
+    return sdscatprintf(sdsempty(),"%s.%s = %s;\n",array,field,value);
 }
 
 sds generate_lookup_assignment(struct parsed_stmt assign){
@@ -284,13 +355,17 @@ sds generate_if_then(struct parsed_stmt if_then){
     sds cond = generate_expr(if_then.expr);
     sds if_stmt = generate_statement_list(parsed_stmt_list_get(if_then.stmt_list));
 
-    sds result = sdscatprintf("if (%s){%s}\n",cond,if_stmt);
+    sds result = sdscatprintf(sdsempty(),
+    "if (%s){\n\
+        %s\
+    }\n",cond,if_stmt);
 
     if(!if_then.else_stmts.empty){
 
         char* else_stmt = generate_statement_list(parsed_stmt_list_get(if_then.else_stmts));
-        result=sdscatprintf(result,"else {%s}\n",else_stmt);
+        result=sdscatprintf(result,"else {%s\n}\n",else_stmt);
     }
+    return result;
 }
 
 sds generate_while(struct parsed_stmt loop){
@@ -300,14 +375,22 @@ sds generate_while(struct parsed_stmt loop){
 }
 
 sds generate_for(struct parsed_stmt loop){
-    char* cond = generate_expr(loop.expr);
+    char* stop = generate_expr(loop.expr);
     char* var = get_identifier_text(loop.var);
     char* value = generate_expr(loop.expr);
-    char* step = generate_expr(loop.step);
+    char* step;
+
+    if (!loop.step.empty){
+        step = generate_expr(loop.step);
+    }
+    else{
+        step = "1";
+    }
+
     char* stmt = generate_statement_list(parsed_stmt_list_get(loop.stmt_list));
 
-    return sdscatprintf(sdsempty(),"for(%s = %s;%s;%s=%s+%s)\n{%s}",
-                        var,value,cond,var,var,step,stmt);
+    return sdscatprintf(sdsempty(),"for(int %s = %s;%s < %s;%s=%s+%s)\n{\n%s\n}\n",
+                        var,value,var,stop,var,var,step,stmt);
 }
 
 sds generate_case(struct parsed_stmt stmt ){
@@ -380,7 +463,7 @@ char * generate_statement_code(struct parsed_stmt statement){
         case PARSED_CONTINUE:
             return generate_continue(statement);
         case PARSED_EXPR:
-            return generate_expr(statement.expr);
+            return sdscat(generate_expr(statement.expr),";\n");
         default:
             printf("error intentando parsear un statement de tipo %d",statement.type);
             exit(-1);

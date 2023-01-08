@@ -1,12 +1,13 @@
 ALGORITMO SUMAR
 VARIABLES
-	x : REAL
+	x : ENTERO
 	y : ENTERO
 INICIO
 	//Comentario de una línea
-	/*Comentario 
-	multi
-	linea*/
+
+	// /*Comentario 
+	// multi
+	// linea*/
 	MIENTRAS x < 10 HACER
 		DESDE i <- 0 HASTA 20 PASO 7 HACER
 			ESCRIBIR(i)
@@ -14,7 +15,7 @@ INICIO
 		FIN_DESDE
 	FIN_MIENTRAS
 		
-	SI 5=4 ENTONCESs
+	SI 5=4 ENTONCES
 		ESCRIBIR("cosa 1")
 	x <- 5
 	x <- x MOD 2

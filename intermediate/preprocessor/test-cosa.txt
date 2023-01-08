@@ -1,11 +1,13 @@
 ALGORITMO asignar_persoas
 TIPOS
-rsoa = REGISTROpersoa
+    persoa = REGISTRO
     nome : Cadena
     numOrde : Entero
     FIN_REGISTRO
+
 VARIABLES
     p1,p2 : persoa
+
 INICIO
     p1.nome <- "Pepa"
     p1.numOrde  <- 15

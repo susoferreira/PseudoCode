@@ -5,6 +5,7 @@
 #include <string.h>
 #include "./sds/sds.h"
 #include "preprocessor.h"
+#include <libgen.h>
 
 #define OWL_PARSER_IMPLEMENTATION
 #include "parser.h"
@@ -33,10 +34,19 @@ int main(int argc, char* argv[])
 
     struct parsed_program  program = owl_tree_get_parsed_program(tree);
     struct parsed_stmt_list stmt_list = parsed_stmt_list_get(program.stmt_list);
-    
-    sds  generated_program = sdscatprintf(sdsempty(),"int main {%s\nreturn 0;}",generate_statement_list(stmt_list));
-    printf("%s",generated_program);
+
+    //guardamos el main (primer statement del programa)
+    //como alguien no ponga el main al principio del programa me cago en sus muertos
+    sds main = generate_statement_code(parsed_stmt_get(stmt_list.stmt));
+    stmt_list.stmt = owl_next(stmt_list.stmt);    
+
+    //resto del programa (funciones)
+    sds  generated_program = sdscatprintf(sdsempty(),"%s\n",generate_statement_list(stmt_list));
+    printf("%s\n%s\n",generated_program,main);
     owl_tree_destroy(tree);
+
+    FILE* output=fopen(sdscat(sdscat(sdsnew("./intermediate/generator/"),basename(argv[1])),".cpp"),"w");
+    fprintf(output,"#include \"pseudocode/builtins.h\"\n%s\n%s\n",generated_program,main);
     
     return 0;
 }

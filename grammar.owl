@@ -29,10 +29,10 @@ stmt =
 
 function-header = identifier@name parameter-list@parameters
 
-variable-declaration-block = (variables-block | tipos-block )+ '\n'* 'INICIO'
+variable-declaration-block = (tipos-block | variables-block )+  'INICIO'
 
-variables-block = variable-start-tokens variable-declaration{'\n',1+} '\n'
-tipos-block = tipos-start-tokens struct-declaration{'\n',1+}
+variables-block = variable-start-tokens variable-declaration{'\n',1+} '\n'+
+tipos-block = tipos-start-tokens struct-declaration{'\n',1+} '\n'*
 tipos-start-tokens = ('TIPO'|'TIPOS') '\n'
 variable-start-tokens = ('VARIABLE'|'VARIABLES') '\n'
 struct-declaration = (identifier@struct_name '=' 'REGISTRO' '\n' variable-declaration{'\n',1+} '\n'  'FIN_REGISTRO' '\n')
@@ -68,10 +68,9 @@ expr =
     '<=' : less-than-or-equal-to
     '>=' : greater-than-or-equal-to
   .operators infix left
-    'y' : and
+    'Y' : and
   .operators infix left
-    'o' : or
+    'O' : or
 parameter-list =
-    [ '(' (identifier@E-S identifier@var-type ':' identifier@var_name){','} ')' ]
-
+    [ '(' (identifier@E '/'identifier@S identifier@var-type ':' identifier@var_name){','} ')' ]
 .line-comment-token '//'

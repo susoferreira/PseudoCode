@@ -2,6 +2,7 @@ ALGORITMO TEST4
 VARIABLES
 i : Entero
 j : Entero
+r : Entero
 INICIO
 
 i <- 3
