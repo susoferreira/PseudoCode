@@ -2,3 +2,6 @@
 .vscode-ctags
 ./owl/*
 ./intermediate/preprocessor/*
+./intermediate/generator/*
+tags
+.vscode-ctags.next
