@@ -24,5 +24,5 @@ Cada vez que se modifique ```grammar.owl``` se debe regenerar el parser y recomp
 
 ## Uso
 
-La sintáxis del generador es la siguiente: ``` generator <nombre fichero>``` ~Actualmente no es muy usable, en parte porque el output está mezclado con mensajes de debug y error, y en parte porque no funciona (xd)~ la salida del generador se guarda en ```./intermediate/generator/<nombre_fichero>
+La sintáxis del generador es la siguiente: ``` generator <nombre fichero>``` ~Actualmente no es muy usable, en parte porque el output está mezclado con mensajes de debug y error, y en parte porque no funciona (xd)~ la salida del generador se guarda en ```./intermediate/generator/<nombre_fichero>```
 
