@@ -29,14 +29,25 @@ stmt =
 
 function-header = identifier@name parameter-list@parameters
 
-variable-declaration-block = (tipos-block | variables-block )+  'INICIO'
+variable-declaration-block = (constantes-block | tipos-block | variables-block )+  'INICIO'
 
 variables-block = variable-start-tokens variable-declaration{'\n',1+} '\n'+
-tipos-block = tipos-start-tokens struct-declaration{'\n',1+} '\n'*
+tipos-block = tipos-start-tokens (struct-declaration|array-declaration){'\n',1+} '\n'*
+constantes-block = constantes-start-tokens variable-declaration{'\n',1+} '\n'+
 tipos-start-tokens = ('TIPO'|'TIPOS') '\n'
 variable-start-tokens = ('VARIABLE'|'VARIABLES') '\n'
+constantes-start-tokens = ('CONSTANTE' | 'CONSTANTES') '\n' 
 struct-declaration = (identifier@struct_name '=' 'REGISTRO' '\n' variable-declaration{'\n',1+} '\n'  'FIN_REGISTRO' '\n')
-variable-declaration = (identifier@var_name{',',1+} ':' identifier@var_type ('=' expr@initial_value)?  )
+variable-declaration = (identifier@var_name{',',1+} ':' variable-type ('=' expr@initial_value)?  )
+
+variable-type = (identifier@var_type | tipo-cadena)
+tipo-cadena = 'Cadena' array-size
+
+#los arrays se declaran en tipos xd
+array-declaration = identifier@array_name  '=' 'array'  array-size 'de' identifier@array_type
+
+array-size = [ '[' (expr | size-range) ']' ]
+size-range = expr '..' expr
 
 expr =
     string : string

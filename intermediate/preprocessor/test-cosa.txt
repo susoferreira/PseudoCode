@@ -1,7 +1,7 @@
 ALGORITMO asignar_persoas
 TIPOS
     persoa = REGISTRO
-    nome : Cadena
+    nome : Cadena[10]
     numOrde : Entero
     FIN_REGISTRO
 
