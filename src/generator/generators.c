@@ -46,7 +46,7 @@ sds generate_return(struct parsed_stmt statement){
 
 
 sds generate_variable_declaration(struct parsed_variable_declaration var){
-    const char* var_type = get_identifier_text(var.var_type);
+
 
     //puede haber más de una variable declarada a la vez
     sds var_names = sdsempty();
@@ -58,14 +58,29 @@ sds generate_variable_declaration(struct parsed_variable_declaration var){
 
     var_names=sdstrim(var_names,", ");// remove trailing comma and whitespace
 
+    struct parsed_variable_type type = parsed_variable_type_get(var.variable_type);
+
+    sds var_declaration;
+    sds var_type;
+    if(!type.var_type.empty){
+        var_type = get_identifier_text(type.var_type);
+        var_declaration = sdscat(sdscat(var_type," "),var_names);
+    }else{
+        sds arr_size = generate_array_size(parsed_array_size_get(parsed_tipo_cadena_get(type.tipo_cadena).array_size));
+        var_declaration = sdscatprintf(sdsempty(),"Cadena %s [%s]",
+            var_names,
+            arr_size);
+    }
+
 
     if (var.initial_value.empty){
 
-        return sdscatprintf(sdsempty(),"%s %s;",var_type,var_names);
+        return sdscatprintf(sdsempty(),"%s;",var_declaration);
+
     }else{
 
-        char* var_initial_value = generate_expr(var.initial_value);
-        return sdscatprintf(sdsempty(),"%s %s = %s;",var_type,var_names,var_initial_value);
+        return sdscatprintf(sdsempty(),"%s = %s;",var_declaration,generate_expr(var.initial_value));
+
     }
 }
 
@@ -80,45 +95,99 @@ sds generate_variables_block(struct parsed_variables_block var){
     }
     return result;
 }
+sds generate_struct_declaration(struct parsed_struct_declaration st){
+    sds variables=sdsempty();
+    while(!st.variable_declaration.empty){
 
+        variables = sdscatprintf(variables,"%s\n",generate_variable_declaration(parsed_variable_declaration_get(st.variable_declaration)));
+        st.variable_declaration = owl_next(st.variable_declaration);
+    }
+    return sdscatprintf(sdsempty(),"typedef struct{\n%s}%s;",
+        variables,
+        get_identifier_text(st.struct_name)
+        );
+    
+}
+
+sds generate_array_size(struct parsed_array_size size){
+    if (!size.expr.empty){
+        return generate_expr(size.expr);
+    }else{
+        printf("Rango detectado en el tamaño de un array, se ignora el valor de inicio,\n\
+solo están soportados arrays que empiezan en 0\n");
+        return generate_expr(parsed_size_range_get(size.size_range).end);
+    }
+}
+sds generate_array_declaration(struct parsed_array_declaration arr){
+    return sdscatprintf(sdsempty(),"typedef %s %s [%s];",
+                        get_identifier_text(arr.array_type),
+                        get_identifier_text(arr.array_name),
+                        generate_array_size(parsed_array_size_get(arr.array_size))
+                        );
+}
 sds generate_tipos_block(struct parsed_tipos_block tipos){
 
-    sds variables=sdsempty();
+    sds structs=sdsempty();
+    sds arrays=sdsempty();
+
     if (!tipos.struct_declaration.empty){
         struct  parsed_struct_declaration structure = parsed_struct_declaration_get(tipos.struct_declaration);    
         while(!tipos.struct_declaration.empty){
-            
-            while(!structure.variable_declaration.empty){
-                
-                variables = sdscatprintf(variables,"%s\n",generate_variable_declaration(parsed_variable_declaration_get(structure.variable_declaration)));
-                structure.variable_declaration = owl_next(structure.variable_declaration);
-            }
-
+            structs = sdscatprintf(structs,"%s\n",generate_struct_declaration(structure));
             tipos.struct_declaration = owl_next(tipos.struct_declaration);
         }
-        
-    return sdscatprintf(sdsempty(),"typedef struct{\n%s}%s;",
-        variables,
-        get_identifier_text(structure.struct_name)
-        );
     }
-    return "// Posible error, el bloque TIPOS ESTABA VACÍO";
+    
+    if (!tipos.array_declaration.empty){
+    struct  parsed_array_declaration array = parsed_array_declaration_get(tipos.array_declaration);    
+        while(!tipos.array_declaration.empty){
+            arrays = sdscatprintf(arrays,"%s\n",generate_array_declaration(array));
+            tipos.array_declaration = owl_next(tipos.array_declaration);
+        }
+    }
+    
+    return sdscat(structs,arrays);
+
 }
 
-sds generate_variable_declaration_block(struct parsed_variable_declaration_block vars){
+sds generate_constantes_block(struct parsed_constantes_block var){
     sds result=sdsempty();
+    while(!var.variable_declaration.empty){
+        
+        result = sdscatprintf(result,"const %s\n",
+            generate_variable_declaration(
+                parsed_variable_declaration_get(var.variable_declaration)));
+        var.variable_declaration = owl_next(var.variable_declaration);
+    }
+    return result;
+}
 
+//retorna constantes y tipos como punteros porque en distintos scopes que variables y no pueden retornarse juntos
+//tipos y constantes tienen que estar inicializados con sdsempty()
+//retorna variables de la manera habitual 
+sds generate_variable_declaration_block(struct parsed_variable_declaration_block vars, sds* tipos_out, sds* constantes_out){
+    sds variables = sdsempty();
+    sds tipos=sdsempty();
+    sds constantes=sdsempty();
     int count = 0; 
     // usado para comprobar que no haya más de dos declaraciones
     unsigned int end_tipos=0;
     unsigned int start_variables=-1;
     //usado para comprobar que tipos va antes que variables
 
+    while (!vars.constantes_block.empty){
+        count++;
+        struct parsed_constantes_block bloque = parsed_constantes_block_get(vars.constantes_block);
+        end_tipos = bloque.range.end;
+        constantes = sdscatprintf(constantes,"%s\n",generate_constantes_block(bloque));
+        vars.constantes_block = owl_next(vars.constantes_block);
+    }
+
     while (!vars.tipos_block.empty){
         count++;
         struct parsed_tipos_block bloque = parsed_tipos_block_get(vars.tipos_block);
         end_tipos = bloque.range.end;
-        result = sdscatprintf(result,"%s\n",generate_tipos_block(bloque));
+        tipos = sdscatprintf(tipos,"%s\n",generate_tipos_block(bloque));
         vars.tipos_block = owl_next(vars.tipos_block);
     }
 
@@ -126,22 +195,33 @@ sds generate_variable_declaration_block(struct parsed_variable_declaration_block
         count++;
         struct parsed_variables_block bloque = parsed_variables_block_get(vars.variables_block);
         start_variables = bloque.range.start;
-        result = sdscatprintf(result,"%s\n",generate_variables_block(bloque));
+        variables = sdscatprintf(variables,"%s\n",generate_variables_block(bloque));
         vars.variables_block = owl_next(vars.variables_block);
     }
 
-    if (count > 2 || end_tipos > start_variables ){
+    if (count > 3 || end_tipos > start_variables ){
+        //este aviso es una mierda, si
         printf("AVISO: En pseudocódigo no se puede tener más de una declaración de cada tipo, y 'TIPOS' debe ir antes que 'VARIABLES'");
     }
-    return result;
+    *constantes_out = constantes;
+    *tipos_out = tipos;
+    return variables;
 }
 
 sds generate_program_declarations(struct parsed_stmt statement){
     sds program_name = get_identifier_text(statement.program_name);
     //sds program_name = sdsnew(º(statement.program_name).identifier);
-    sds var = generate_variable_declaration_block(parsed_variable_declaration_block_get(statement.variable_declaration_block));
+    sds constantes=sdsnew("asd");
+    sds tipos=sdsnew("fgh");
+    sds variables = generate_variable_declaration_block(parsed_variable_declaration_block_get(statement.variable_declaration_block),&tipos,&constantes);
     sds stmt_list = generate_statement_list(parsed_stmt_list_get(statement.stmt_list));
-    return sdscatprintf(sdsempty(),"//algoritmo %s\nint main(int argc,char* argv[]){\n%s\n%s}",program_name,var,stmt_list);
+    return sdscatprintf(sdsempty(),"//algoritmo %s\n %s\n%s\nint main(int argc,char* argv[]){\n%s\n%s}",
+    program_name,
+    constantes,
+    tipos,
+    variables,
+    stmt_list
+    );
 }
 
 
@@ -173,13 +253,13 @@ sds generate_function_call(struct parsed_expr call){
 
 sds generate_expr(struct owl_ref expr){
     struct parsed_expr exp = parsed_expr_get(expr);
-
+    double number; // a c no le gusta crear variables dentro de switch case y se queja (aunque funciona igual)
     switch(exp.type){
         case PARSED_STRING:
             return sdsnew(get_string_text(exp.string));
             break;
         case PARSED_NUMBER:
-            double number = parsed_number_get(exp.number).number;
+            number = parsed_number_get(exp.number).number;
             if (number == (int) number) return sdscatprintf(sdsempty(),"%d", (int) number);
             else return sdscatprintf(sdsempty(),"%f", number);
             break;
@@ -254,7 +334,7 @@ sds generate_expr(struct owl_ref expr){
             return sdscat(sdscat(generate_expr(exp.left),"||"),generate_expr(exp.right));
             break;
         default:
-            printf("error intentando generar una expresión de tipo %d",exp.type);
+            printf("error intentando generar una expresión de tipo %d\n",exp.type);
             exit(-1);
     }
 }
@@ -276,32 +356,23 @@ sds generate_parameter_list(struct parsed_parameter_list par){
         bool out;
         sds var_type = get_identifier_text(par.var_type);
         sds var_name = get_identifier_text(par.var_name);
-        if(!par.E.empty){
-            //comprobar que aunque no esté vacío el texto es E
-            if (strcmp(get_identifier_text(par.E),"E")!=0){
-                printf("Error en la declaración de  '<error> %s %s': las opciones correctas son E/S y E ",var_type,var_name);
-                exit(-1);
-            }
+        if(!par.in.empty){
             in = true;
         }
-        if(!par.S.empty){
-            //comprobar que aunque no esté vacío el texto es S
-            if (strcmp(get_identifier_text(par.S),"S")!=0){
-                printf("Error en la declaración de  '<error> %s %s': las opciones correctas son E/S y E ",var_type,var_name);
-                exit(-1);
-            }
+        if(!par.out.empty){
             out = true;
         }
         
         if(out && !in){
+            //creo que con la estructura del parser actual no es posible escribir un programa así pero xd
             printf("watefok lmao una variable de solo salida que te pasa bro");
-        }  
+        }
 
         result = sdscatprintf(result,"%s,", generate_parameter(out,var_type,var_name));
         par.var_name=owl_next(par.var_name);
         par.var_type=owl_next(par.var_type);
-        par.E=owl_next(par.E);
-        par.S=owl_next(par.S);
+        par.in=owl_next(par.in);
+        par.out=owl_next(par.out);
     }
         result=sdstrim(result,",");// remove trailing comma
         return sdscat(result,")");
@@ -316,18 +387,41 @@ sds generate_function_header(struct parsed_function_header header){
 sds generate_function(struct parsed_stmt func){
     sds function_header = generate_function_header(parsed_function_header_get(func.function_header));
     sds return_type = sdsnew(get_identifier_text(func.return_type));
-    sds variable_declaration_block = generate_variable_declaration_block(parsed_variable_declaration_block_get(func.variable_declaration_block));
+
+
+    sds tipos;
+    sds constantes;
+    sds variables = generate_variable_declaration_block(parsed_variable_declaration_block_get(func.variable_declaration_block),&tipos,&constantes);
+
+
     sds stmt_list = generate_statement_list(parsed_stmt_list_get(func.stmt_list));
-    return sdscatprintf(sdsempty(),"%s %s{%s %s}",return_type,function_header,variable_declaration_block,stmt_list);
+    //tipos y constantes tienen un scope distinto a variables así que van fuera de la función
+    return sdscatprintf(sdsempty(),"%s\n%s\n%s %s{%s %s}",
+    tipos,
+    constantes,
+    return_type,
+    function_header,
+    variables,
+    stmt_list
+    );
 
 }
 
 //the same as generate function but always void  (yes im repeating code)
 sds generate_procedure(struct parsed_stmt proc){
     sds function_header = generate_function_header(parsed_function_header_get(proc.function_header));
-    sds variable_declaration_block = generate_variable_declaration_block(parsed_variable_declaration_block_get(proc.variable_declaration_block));
+
+    sds tipos;
+    sds constantes;
+    sds variables = generate_variable_declaration_block(parsed_variable_declaration_block_get(proc.variable_declaration_block),&tipos,&constantes);
     sds stmt_list = generate_statement_list(parsed_stmt_list_get(proc.stmt_list));
-    return sdscatprintf(sdsempty(),"void %s{%s %s}",function_header,variable_declaration_block,stmt_list);
+    return sdscatprintf(sdsempty(),"%s\n%s\nvoid %s{%s %s}",
+    tipos,
+    constantes,
+    function_header,
+    variables,
+    stmt_list
+    );
 
 }
 
@@ -348,7 +442,7 @@ sds generate_lookup_assignment(struct parsed_stmt assign){
     char* value = generate_expr(assign.expr);
     char* lookup = generate_expr(assign.lookup);
     char* array = generate_expr(assign.array);
-    return sdscatprintf(sdsempty(),"%s[%s] = %s\n",array,lookup,value);
+    return sdscatprintf(sdsempty(),"%s[%s] = %s;\n",array,lookup,value);
 }
 
 sds generate_if_then(struct parsed_stmt if_then){
@@ -415,7 +509,7 @@ sds generate_case(struct parsed_stmt stmt ){
 
 
     sds result = sdscatprintf(sdsempty(),"switch (%s){%s}",var,statements);
-    
+    return result;
 }
 
 char * generate_statement_code(struct parsed_stmt statement){

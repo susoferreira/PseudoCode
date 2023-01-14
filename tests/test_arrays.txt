@@ -1,7 +1,7 @@
 ALGORITMO penepene
 CONSTANTES
     tam : Entero = 69
-    nome : Cadena[tam]
+    nome : Cadena[tam] = "owo"
 TIPOS
     arr_real = array[tam] de Real
 VARIABLES
