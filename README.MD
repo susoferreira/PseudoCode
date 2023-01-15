@@ -19,7 +19,7 @@ Este repositorio contiene un programa para transformar pseudocódigo a código e
 
 ## Parser
 
-Es un parser generado usando el programa [owl](https://github.com/ianh/owl), la definición de la gramática usada se puede encontrar en ```grammar.owl```. Actualmente está mayoritariamente completo, aunque le faltan algunas características, como soportar declaraciones de arrays dentro del bloque ```TIPOS```
+Es un parser generado usando el programa [owl](https://github.com/ianh/owl), la definición de la gramática usada se puede encontrar en ```grammar.owl```. Actualmente está mayoritariamente completo, aunque le faltan algunas características,como los bucles HACER-MIENTRAS
 
 ## Preprocesador
 
