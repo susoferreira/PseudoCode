@@ -471,7 +471,7 @@ sds generate_while(struct parsed_stmt loop){
 sds generate_for(struct parsed_stmt loop){
     char* stop = generate_expr(loop.expr);
     char* var = get_identifier_text(loop.var);
-    char* value = generate_expr(loop.expr);
+    char* value = generate_expr(loop.value);
     char* step;
 
     if (!loop.step.empty){
@@ -571,7 +571,6 @@ sds generate_statement_list(struct parsed_stmt_list stmt_list){
         struct parsed_stmt statement = parsed_stmt_get(stmt_list.stmt);
         result=sdscatprintf(result,"%s",generate_statement_code(statement));        
         stmt_list.stmt= owl_next(stmt_list.stmt);
-        printf("resultado por el momento:\n%s\n\n\n\n",result);
     }
         return result;
 }

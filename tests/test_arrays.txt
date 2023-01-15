@@ -10,6 +10,7 @@ VARIABLES
 INICIO
     DESDE i <- 0 HASTA tam - 1 HACER
         vec[i] <- 69 * i
+        ESCRIBIR(vec[i])
     FIN_DESDE
 FIN
 

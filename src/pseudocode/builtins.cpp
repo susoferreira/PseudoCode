@@ -1,1 +1,1 @@
-//vacío (por ahora, mientras sirva con poner defines)
+//sigue vacío porque los templates tienen que ir en el .h o hacer cosas raras

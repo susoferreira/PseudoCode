@@ -15,6 +15,6 @@ INICIO
                 suma <- suma+i+2
             FIN_SI
         FIN_SI
+        ESCRIBIR(i,suma,stop,n)
     FIN_DESDE
-    ESCRIBIR(i,suma,stop,n)
 FIN

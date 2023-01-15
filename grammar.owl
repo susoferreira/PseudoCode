@@ -47,7 +47,7 @@ tipo-cadena = 'Cadena' array-size
 array-declaration = identifier@array_name  '=' 'array'  array-size 'de' identifier@array_type
 
 array-size = [ '[' (expr | size-range) ']' ]
-size-range = expr '..' expr
+size-range = expr@start '..' expr@end
 
 expr =
     string : string
@@ -82,6 +82,9 @@ expr =
     'Y' : and
   .operators infix left
     'O' : or
+
+in='E'
+out='S'
 parameter-list =
-    [ '(' (identifier@E '/'identifier@S identifier@var-type ':' identifier@var_name){','} ')' ]
+    [ '(' (in? ('/' out)? identifier@var-type ':' identifier@var_name){','} ')' ]
 .line-comment-token '//'
