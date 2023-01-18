@@ -5,8 +5,8 @@
 #include <stdbool.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <stdlib.h>
 #include "preprocessor.h"
-
 bool in(sds list[] ,int list_length,sds element){
     for(int i =0;i<list_length;i++)
     {
@@ -42,12 +42,29 @@ char* preprocess(char* file_path){
         exit(-1); 
     }
 
-    char line_char[100];
-    while(fgets(line_char, 1000000, (FILE*)input)){
+    char line_char[255];
+    while(fgets(line_char, 255, (FILE*)input)){
         int words_size;
         sds * words = sdssplitlen(sdsnew(line_char),sdslen(sdsnew(line_char))," ",1,&words_size); //array de sds
 
         if (words_size==0) continue;
+        
+        //modificar el inicio del do-while para que lo pueda detectar el parser
+        if (strcmp(words[0],"HACER\n")==0){
+            result=sdscat(result,"HACER_\n");
+            fputs("HACER_\n",out);
+            continue;
+        }
+
+        if (strcmp(words[0],"MIENTRAS")==0) {
+            sds line =sdsnew(line_char);
+            sdsrange(line,sdslen(words[0]),sdslen(line)); //gets the rest of the line
+            line=sdstrim(line," \n");
+            line=sdscat(line," MIENTRAS_\n");
+            result=sdscat(result,line);
+            fputs(line,out);
+            continue;
+        }
 
         if ((words_size ==3) && (strcmp(words[1], "=")==0) && (strcmp(words[2],"REGISTRO")==0)) typedefs[++typedef_size] = words[0];
 
@@ -63,8 +80,8 @@ char* preprocess(char* file_path){
             continue;
         }
 
-        fputs(line_char,out);
 
+        fputs(line_char,out);
         result = sdscat(result,line_char);
     
 

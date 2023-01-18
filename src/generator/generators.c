@@ -251,6 +251,7 @@ sds generate_function_call(struct parsed_expr call){
     }
 }
 
+
 sds generate_expr(struct owl_ref expr){
     struct parsed_expr exp = parsed_expr_get(expr);
     double number; // a c no le gusta crear variables dentro de switch case y se queja (aunque funciona igual)
@@ -468,6 +469,12 @@ sds generate_while(struct parsed_stmt loop){
     return sdscatprintf(sdsempty(),"while (%s) {%s}",cond,stmt);
 }
 
+sds generate_do_while(struct parsed_stmt loop){
+    sds cond = generate_expr(loop.expr);
+    sds stmt = generate_statement_list(parsed_stmt_list_get(loop.stmt_list));
+    return sdscatprintf(sdsempty(),"do{%s}while(%s);",stmt,cond);
+}
+
 sds generate_for(struct parsed_stmt loop){
     char* stop = generate_expr(loop.expr);
     char* var = get_identifier_text(loop.var);
@@ -556,6 +563,8 @@ char * generate_statement_code(struct parsed_stmt statement){
             break;
         case PARSED_CONTINUE:
             return generate_continue(statement);
+        case PARSED_DO_WHILE:
+            return generate_do_while(statement);
         case PARSED_EXPR:
             return sdscat(generate_expr(statement.expr),";\n");
         default:

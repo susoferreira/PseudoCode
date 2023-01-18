@@ -19,6 +19,7 @@ stmt =
     [ 'SI' expr 'ENTONCES'?  stmt-list
       ('SI_NO' 'ENTONCES'? stmt-list@else-stmts)? 'FIN_SI' ] : if-then
     [ 'MIENTRAS' expr 'HACER' stmt-list 'FIN_MIENTRAS' ] : while
+    [ 'HACER_' stmt-list  newline expr  'MIENTRAS_' ] : do-while
     [ 'DESDE' (identifier@var '<-')? expr@value 'HASTA'  expr   ('PASO' expr@step)? "HACER" stmt-list 'FIN_DESDE' ] : for
     ['CASO' expr 'SEA' newline (expr@val ':'  stmt-list newline )* ('SI_NO' ':'? stmt-list@case_default) newline 'FIN_CASO']: case
     'break' : break

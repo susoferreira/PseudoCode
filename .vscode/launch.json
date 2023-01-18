@@ -5,43 +5,12 @@
     "version": "0.2.0",
     "configurations": [
 
-
-
-
-
-
-
-
-
     {
         "name": "(gdb) built generator binary",
         "type": "cppdbg",
         "request": "launch",
         "program": "${workspaceRoot}/build/generator" ,
-        "args": ["tests/test_arrays.txt"],
-        "stopAtEntry": false,
-        "cwd": "${workspaceRoot}",
-        "environment": [],
-        "externalConsole": false,
-        "MIMode": "gdb",
-        "setupCommands": [
-            {
-                "description": "Habilitar la impresión con sangría para gdb",
-                "text": "-enable-pretty-printing",
-                "ignoreFailures": true
-            },
-            {
-                "description": "Establecer tipo de desensamblado en Intel",
-                "text": "-gdb-set disassembly-flavor intel",
-                "ignoreFailures": true
-            }
-        ]
-    },{
-        "name": "(gdb) Run compiled code",
-        "type": "cppdbg",
-        "request": "launch",
-        "program": "${workspaceRoot}/output/test_procedimiento.txt" ,
-        "args": [""],
+        "args": ["tests/test_do_while.txt"],
         "stopAtEntry": false,
         "cwd": "${workspaceRoot}",
         "environment": [],
