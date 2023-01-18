@@ -13,7 +13,7 @@ Este repositorio contiene un programa para transformar pseudocódigo a código e
   FIN
   ```
 
-- Bucles HACER-MIENTRAS (do-while)
+- ~~Bucles HACER-MIENTRAS (do-while)~~
 
 - Agradezco todos los reportes de bugs 
 
@@ -28,6 +28,12 @@ Modifica ligeramente el pseudocódigo antes de ser parseado para que sea posible
 ## Generador
 
 Transforma el [AST](https://en.wikipedia.org/wiki/Abstract_syntax_tree) generado por el parser en código C++. Es la parte que menos completa está del programa y con más bugs
+
+##### Legibilidad del código 
+
+uno de los futuros objetivos para este proyecto es que el código sea razonablemente legible (indentación y estilo ) por humanos, actualmente esto no se cumple, por lo que es recomendable usar la función ```Formatear código``` de una IDE o un formateador de código (online o ejecutable como ```clang-format```)  si se pretende leer el código generado 
+
+
 
 ## Setup
 
