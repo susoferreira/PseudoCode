@@ -1,6 +1,4 @@
-#ifndef GENERATORS_H
-#define GENERATORS_H
-
+#pragma once
 #include "./sds/sds.h"
 #include "parser.h"
 
@@ -29,5 +27,3 @@ sds generate_for(struct parsed_stmt loop);
 sds generate_case(struct parsed_stmt stmt);
 char *generate_statement_code(struct parsed_stmt statement);
 sds generate_statement_list(struct parsed_stmt_list stmt_list);
-
-#endif

@@ -7,87 +7,96 @@
 #include <sys/stat.h>
 #include <stdlib.h>
 #include "preprocessor.h"
-bool in(sds list[] ,int list_length,sds element){
-    for(int i =0;i<list_length;i++)
-    {
-        if (strcmp(element,list[i])==0) return true;
+#include "utils.h"
+
+int is_do_while_start(sds *words) {
+    return strcmp(words[0], "HACER") == 0;
+}
+
+int is_do_while_end(sds *words) {
+    return strcmp(words[0], "MIENTRAS") == 0;
+}
+
+int is_struct_declaration(int words_size, sds *words) {
+    return (words_size == 3) && (strcmp(words[1], "=") == 0)
+            && (strcmp(words[2], "REGISTRO") == 0);
+}
+
+//two or more spaces in a row will create this
+//words_size will be read and repurposed for the new array
+sds * remove_empty_words(sds words[],int words_size){
+    sds new_words[words_size];
+    int counter=0;
+    //str==0x00 ==> empty string
+    for (int i =0; i< words_size; i++) {
+        if(words[i][0] == 0x00){
+            sdsfree(words[i]);
+            continue;
+        }
+        new_words[counter++] = words[i];
     }
-    return false;
+    //copying results onto a stack allocated array
+    sds* ret = malloc(sizeof (sds)*counter+1);
+    for (int i=0;i<counter;i++) {
+        ret[i]=new_words[i];
+    }
+    return ret;
 }
- 
-sds modify_function(sds type,sds declaration){
-    return sdscatprintf(sdsempty(),"%s %s\n",declaration,type);
-}
 
-char* preprocess(char* file_path){
-    
+sds preprocess(char* src){
 
+    sds src_ = sdsnew(src);
+    int lines_size;
+    sds * lines = sdssplitlen(src_,sdslen(src_) ,"\n",1,&lines_size);
 
+   
+
+	sds line;
     sds result=sdsempty();
-    FILE *input = fopen(file_path,"r");
-    FILE *out = fopen(sdscat(sdsnew("./intermediate/preprocessor/"),basename(file_path)),"w");
-
-
-    sds typedefs[100] = {"Entero","Real","Cadena","Carácter","Lógico"}; //builtin types
+    char* typedefs[100] = {"Entero","Real","Cadena","Carácter","Lógico"}; //builtin types
     //como haya más de 100 tipos en el programa me suicido
     int typedef_size = 4;
 
-
-    if (!input || !out)
+    for (int i=0; i<lines_size; i++)
+    
     {
-        char buf[100];
-        getcwd(buf,100);
-        printf("current working directory: %s\n",buf);
-        printf("Error de preprocesador, fichero no abierto\n");
-        exit(-1); 
-    }
+        
+        line = lines[i];
 
-    char line_char[255];
-    while(fgets(line_char, 255, (FILE*)input)){
-        int words_size;
-        sds * words = sdssplitlen(sdsnew(line_char),sdslen(sdsnew(line_char))," ",1,&words_size); //array de sds
+        int words_size=0;
+        sds * words = sdssplitlen(line,sdslen(line)," ",1,&words_size);
+        words = remove_empty_words(words,words_size);
 
         if (words_size==0) continue;
         
         //modificar el inicio del do-while para que lo pueda detectar el parser
-        if (strcmp(words[0],"HACER\n")==0){
-            result=sdscat(result,"HACER_\n");
-            fputs("HACER_\n",out);
-            continue;
+        if (is_do_while_start(words)) {
+
+            sdsfree(line);
+            line=sdsnew("HACER_");
         }
 
-        if (strcmp(words[0],"MIENTRAS")==0) {
-            sds line =sdsnew(line_char);
+        if (is_do_while_end(words)) {
             sdsrange(line,sdslen(words[0]),sdslen(line)); //gets the rest of the line
-            line=sdstrim(line," \n");
-            line=sdscat(line," MIENTRAS_\n");
-            result=sdscat(result,line);
-            fputs(line,out);
-            continue;
+            line = sdscat(line," MIENTRAS_");
         }
 
-        if ((words_size ==3) && (strcmp(words[1], "=")==0) && (strcmp(words[2],"REGISTRO")==0)) typedefs[++typedef_size] = words[0];
+        if (is_struct_declaration(words_size, words))
+            typedefs[++typedef_size] = words[0];
 
         
         if (in(typedefs,typedef_size,words[0])){
-            sds line = sdstrim(sdsnew(line_char),"\n");
+            sds line = sdsnew(line);
             sdsrange(line,sdslen(words[0]),sdslen(line)); //gets only the declaration(without the type)
-            
-            sds modified_function = modify_function(words[0],line);
-            fputs(modified_function,out);
-
-            result = sdscat(result,modified_function);
-            continue;
+            line = sdscat(words[0],line);
         }
 
-
-        fputs(line_char,out);
-        result = sdscat(result,line_char);
-    
-
+        line=sdscat(line,"\n");
+        result=sdscat(result,line);
+        sdsfree(line);
+        
     }
-    fclose(input);
-    fclose(out);
+
 
     return result;
 }

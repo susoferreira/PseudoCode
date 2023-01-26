@@ -71,6 +71,9 @@
         "variant": "cpp",
         "stdbool.h": "c"
     },
-    "python.analysis.typeCheckingMode": "off",
-    "mesonbuild.configureOnOpen": false
+    "clangd.arguments": [
+        "-background-index",
+        "-compile-commands-dir=/run/media/suso/SHARE/Programación/c++/PseudoCode/build"
+    ],
+    "mesonbuild.configureOnOpen": true
 }

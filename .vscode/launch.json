@@ -4,32 +4,15 @@
     // Para más información, visite: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
+    
 
     {
-        "name": "(gdb) built generator binary",
-        "type": "cppdbg",
+        "type": "by-gdb",
         "request": "launch",
-        "program": "${workspaceRoot}/build/generator" ,
-        "args": ["tests/test_do_while.txt"],
-        "stopAtEntry": false,
+        "name": "Launch(gdb)",
+        "program": "${workspaceRoot}/build/generator_cli",
         "cwd": "${workspaceRoot}",
-        "environment": [],
-        "externalConsole": false,
-        "MIMode": "gdb",
-        "setupCommands": [
-            {
-                "description": "Habilitar la impresión con sangría para gdb",
-                "text": "-enable-pretty-printing",
-                "ignoreFailures": true
-            },
-            {
-                "description": "Establecer tipo de desensamblado en Intel",
-                "text": "-gdb-set disassembly-flavor intel",
-                "ignoreFailures": true
-            }
-        ]
-    }
-
-
+        "programArgs": "${workspaceRoot}/tests/test-cosa.txt" 
+    },
 ]
 }

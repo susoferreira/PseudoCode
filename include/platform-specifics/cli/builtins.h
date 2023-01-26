@@ -1,3 +1,7 @@
+// este header es específico para cada plataforma, implementa ESCRIBIR y LEER
+// se usa en el código generado
+
+#pragma once
 #include <iostream>
 #include <fstream>
 

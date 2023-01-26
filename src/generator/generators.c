@@ -1,9 +1,10 @@
 #include "generators.h"
 #include "./sds/sds.h"
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "parser.h"
-
+#include "logger.h"
 sds get_identifier_text(struct owl_ref identifier){
     struct parsed_identifier id = parsed_identifier_get(identifier);
     
@@ -113,8 +114,8 @@ sds generate_array_size(struct parsed_array_size size){
     if (!size.expr.empty){
         return generate_expr(size.expr);
     }else{
-        printf("Rango detectado en el tamaño de un array, se ignora el valor de inicio,\n\
-solo están soportados arrays que empiezan en 0\n");
+        logger("Rango detectado en el tamaño de un array, se ignora el valor de inicio,\n\
+solo están soportados arrays que empiezan en 0\n",LOG_INFO);
         return generate_expr(parsed_size_range_get(size.size_range).end);
     }
 }
@@ -169,40 +170,25 @@ sds generate_variable_declaration_block(struct parsed_variable_declaration_block
     sds variables = sdsempty();
     sds tipos=sdsempty();
     sds constantes=sdsempty();
-    int count = 0; 
-    // usado para comprobar que no haya más de dos declaraciones
-    unsigned int end_tipos=0;
-    unsigned int start_variables=-1;
-    //usado para comprobar que tipos va antes que variables
 
     while (!vars.constantes_block.empty){
-        count++;
         struct parsed_constantes_block bloque = parsed_constantes_block_get(vars.constantes_block);
-        end_tipos = bloque.range.end;
         constantes = sdscatprintf(constantes,"%s\n",generate_constantes_block(bloque));
         vars.constantes_block = owl_next(vars.constantes_block);
     }
 
     while (!vars.tipos_block.empty){
-        count++;
         struct parsed_tipos_block bloque = parsed_tipos_block_get(vars.tipos_block);
-        end_tipos = bloque.range.end;
         tipos = sdscatprintf(tipos,"%s\n",generate_tipos_block(bloque));
         vars.tipos_block = owl_next(vars.tipos_block);
     }
 
     while (!vars.variables_block.empty){
-        count++;
         struct parsed_variables_block bloque = parsed_variables_block_get(vars.variables_block);
-        start_variables = bloque.range.start;
         variables = sdscatprintf(variables,"%s\n",generate_variables_block(bloque));
         vars.variables_block = owl_next(vars.variables_block);
     }
 
-    if (count > 3 || end_tipos > start_variables ){
-        //este aviso es una mierda, si
-        printf("AVISO: En pseudocódigo no se puede tener más de una declaración de cada tipo, y 'TIPOS' debe ir antes que 'VARIABLES'");
-    }
     *constantes_out = constantes;
     *tipos_out = tipos;
     return variables;
@@ -265,7 +251,7 @@ sds generate_expr(struct owl_ref expr){
             else return sdscatprintf(sdsempty(),"%f", number);
             break;
         case PARSED_TRUE:
-            return sdsnew("true"); //hay que definir true y false con #define
+            return sdsnew("true");
             break;
         case PARSED_FALSE:
             return sdsnew("false");
@@ -335,8 +321,12 @@ sds generate_expr(struct owl_ref expr){
             return sdscat(sdscat(generate_expr(exp.left),"||"),generate_expr(exp.right));
             break;
         default:
-            printf("error intentando generar una expresión de tipo %d\n",exp.type);
+        {
+            char msg[200];
+            snprintf(msg,200,"error intentando generar una expresión de tipo %d\n",exp.type);
+            logger(msg,LOG_ERROR);
             exit(-1);
+        }
     }
 }
 
@@ -353,8 +343,8 @@ sds generate_parameter_list(struct parsed_parameter_list par){
 
     sds result = sdsnew("(");
     while (!par.var_name.empty){
-        bool in;
-        bool out;
+        bool in  = false;
+        bool out = false;
         sds var_type = get_identifier_text(par.var_type);
         sds var_name = get_identifier_text(par.var_name);
         if(!par.in.empty){
@@ -366,7 +356,7 @@ sds generate_parameter_list(struct parsed_parameter_list par){
         
         if(out && !in){
             //creo que con la estructura del parser actual no es posible escribir un programa así pero xd
-            printf("watefok lmao una variable de solo salida que te pasa bro");
+            logger("watefok lmao una variable de solo salida que te pasa bro",LOG_INFO);
         }
 
         result = sdscatprintf(result,"%s,", generate_parameter(out,var_type,var_name));
@@ -568,8 +558,12 @@ char * generate_statement_code(struct parsed_stmt statement){
         case PARSED_EXPR:
             return sdscat(generate_expr(statement.expr),";\n");
         default:
-            printf("error intentando parsear un statement de tipo %d",statement.type);
+        {
+            char msg[200];
+            snprintf(msg, 200,"error intentando parsear un statement de tipo %d", statement.type);
+            logger(msg,LOG_ERROR);
             exit(-1);
+        }
 
     }
 }

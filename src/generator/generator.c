@@ -1,36 +1,82 @@
 
 
 #include "generators.h"
+#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 #include "./sds/sds.h"
 #include "preprocessor.h"
 #include <libgen.h>
+#include "utils.h"
+#include "logger.h"
+#include "config.h"
 
 #define OWL_PARSER_IMPLEMENTATION
 #include "parser.h"
+
+//preprocesses a file,saves output to another file and returns string 
+char* preprocess_file(char *src,char* file_path){
+    sds result = preprocess(src);
+
+    FILE *out = fopen(sdscat(sdsnew("./intermediate/preprocessor/"),basename(file_path)),"w");
+    if(out == NULL) {
+        logger("file couldn't be opened",LOG_ERROR);
+        exit(-1);
+    }
+    fclose(out);
+    return result;
+}
+
+bool handle_parse_errors(struct owl_tree* tree){
+    char msg[200];
+
+    switch (tree->error) {
+        case ERROR_NONE:
+            return false;
+        case ERROR_INVALID_FILE:
+            logger("fichero no válido", LOG_ERROR);
+            return true;
+        case ERROR_INVALID_OPTIONS:
+            logger("opciones del parser no válidas\n",LOG_ERROR);
+            return true;
+        case ERROR_INVALID_TOKEN:
+            snprintf(msg,200, "invalid token '%.*s'\n", (int)(tree->error_range.end - tree->error_range.start), tree->string + tree->error_range.start);
+            log_range(msg, LOG_ERROR,tree ->error_range.start,tree->error_range.end);
+            return true;
+        case ERROR_UNEXPECTED_TOKEN:
+            snprintf(msg,200, "unexpected token '%.*s'\n", (int)(tree->error_range.end - tree->error_range.start), tree->string + tree->error_range.start);
+            log_range(msg, LOG_ERROR, tree->error_range.start, tree->error_range.end);
+            return true;
+        case ERROR_MORE_INPUT_NEEDED:
+            logger("more input needed\n",LOG_ERROR);
+            return true;
+        default:
+            logger("error desconocido al parsear", LOG_ERROR);
+            return true;
+    }
+}
+
+
 int main(int argc, char* argv[])
 {
     struct owl_tree *tree;
-
-
+ 
+    
     if (argc < 2) {
-        printf("Uso: generator <archivo>");
+        printf("Uso: generator <archivo>\n");
         exit(-1);
     }
-    sds processed = sdsnew(preprocess(argv[1]));
+
+    char* src = read_file(argv[1]);
+    sds processed = preprocess_file(src,argv[1]);
+
     tree = owl_tree_create_from_string(processed);
-    
-    if(tree->error ){
-        int errorlen=tree->error_range.end-tree->error_range.start;
-        char buf[errorlen+100];
-        //margen de 5 caracteres a la izquierda y a la derecha
-        for(int i =0;i<errorlen+30;i++){ 
-            buf[i] = tree->string[tree->error_range.start+i-15];
-        }
-        printf("error en: %s\n",buf);
+
+
+    if (handle_parse_errors(tree)){   
+        exit(-1);
     }
-    owl_tree_print(tree);
+
 
     struct parsed_program  program = owl_tree_get_parsed_program(tree);
     struct parsed_stmt_list stmt_list = parsed_stmt_list_get(program.stmt_list);
@@ -42,11 +88,17 @@ int main(int argc, char* argv[])
 
     //resto del programa (funciones)
     sds  generated_program = sdscatprintf(sdsempty(),"%s\n",generate_statement_list(stmt_list));
-    printf("%s\n%s\n",generated_program,main);
+    printf("%s\"\n%s\n%s\n",conf.builtins_include,generated_program,main);
     owl_tree_destroy(tree);
 
-    FILE* output=fopen(sdscat(sdscat(sdsnew("./intermediate/generator/"),basename(argv[1])),".cpp"),"w");
-    fprintf(output,"#include \"pseudocode/builtins.h\"\n%s\n%s\n",generated_program,main);
+    char outfile[500]="";
+    snprintf(outfile,500,"./intermediate/generator/%s.cpp",basename(argv[1]));
+    FILE* output = fopen(outfile,"w");
+
+    //builtins_include se define según la plataforma
+    fprintf(output,"%s\"\n%s\n%s\n",conf.builtins_include,generated_program,main);
     
+
+    free(src);
     return 0;
 }

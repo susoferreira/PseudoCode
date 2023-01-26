@@ -1,0 +1,4 @@
+- los ficheros .h  de esta carpeta proveen una única definición de ciertas funciones que se usan en el proyecto, cada plataforma implementará estas funciones de manera distinta,es lo equivalente a una _interfaz_ en java. Las distintas implementaciones se encuentran en ```src/platform-specifics/```, segun el target de compilacion se usan unas u otras fuentes para implementar las funciones.
+
+- las subcarpetas contienen distintas definiciones de ```builtins.h```, un header que implementa _LEER_ y _ESCRIBIR_, y se usa en el código generado, también son dependientes de la plataforma, y el path a ```builtins.h``` se define en la ```struct config ```
+esta struct esta __declarada__ en ````config.h``` y la definición (dar valores) se realizará en el código propio de cada plataforma,en ```src/platform-specifics/<plataforma>/config.c```
