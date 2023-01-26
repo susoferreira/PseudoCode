@@ -51,3 +51,10 @@ Se incluye un script ```./scripts/ejecutar_fichero.sh``` que aplica el generador
 
 La sintáxis del generador es la siguiente: ``` generator <nombre fichero>```, aplicará el preprocesador al fichero, guardará el texto preprocesado en ```./intermediate/preprocessor/<nombre fichero>```, y generará el código c++ en ````./intermediate/generator/<nombre fichero> ```.  
 
+## Disclaimer
+
+**This software serves as educative tool for the author, as well as a tool for users to learn how to translate pseudo code to C++. The software is provided "as is", without warranty of any kind, and shall not be related to any external entities and/or their products.**
+
+**The author does not guarantee the correct operation of the software in any scenario excluded from the internal testing process. The author will not be liable for any repercusions the usage of this software might have on the user.**
+
+**The source code is available for inspection and vulnerability reports. The source code is available for commercial use, patent use, private use, modification and distribution on the conditions stated in the _GNU Affero General Public License v3.0_, available [here](LICENSE).**
