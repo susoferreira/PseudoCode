@@ -88,7 +88,7 @@ int main(int argc, char* argv[])
 
     //resto del programa (funciones)
     sds  generated_program = sdscatprintf(sdsempty(),"%s\n",generate_statement_list(stmt_list));
-    printf("%s\"\n%s\n%s\n",conf.builtins_include,generated_program,main);
+    printf("%s\n%s\n%s\n",conf.builtins_include,generated_program,main);
     owl_tree_destroy(tree);
 
     char outfile[500]="";
@@ -96,7 +96,7 @@ int main(int argc, char* argv[])
     FILE* output = fopen(outfile,"w");
 
     //builtins_include se define según la plataforma
-    fprintf(output,"%s\"\n%s\n%s\n",conf.builtins_include,generated_program,main);
+    fprintf(output,"%s\n%s\n%s\n",conf.builtins_include,generated_program,main);
     
 
     free(src);
