@@ -91,6 +91,5 @@ LEER(std::ifstream& fichero, Types... var2)
 #define CARACTER char
 #define Real float
 #define REAL float
-#define Entero int
 #define Logico bool
 #define LOGICO bool

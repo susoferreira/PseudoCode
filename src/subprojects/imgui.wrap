@@ -1,0 +1,15 @@
+[wrap-git]
+directory=imgui-1.89.2
+url = https://github.com/ocornut/imgui
+revision = docking
+depth = 1
+
+patch_url = https://wrapdb.mesonbuild.com/v2/imgui_1.89.2-1/get_patch
+source_filename = imgui-1.89.2.tar.gz
+source_hash = e110beffda505e6954feb7b13541d35a7c12a176b9723290c853684713df6a67
+patch_filename = imgui_1.89.2-1_patch.zip
+patch_hash = 57dd9a868539dbd1b1d3702eeef47a1b6b16cd7cd7adc07352f204ed2d09a11d
+wrapdb_version = 1.89.2-1
+
+[provide]
+imgui = imgui_dep

@@ -1,6 +1,13 @@
 #include "config.h"
 //en este archivo simplemente se define la variable struct config
-//esta función se debe llamar al principio del programa
-    const config conf ={
-        .builtins_include = "#include ./include/generator/platform-specifics/cli/builtins.h"
-    };
+config conf ={
+    //relativo al fichero generado
+
+    //for running in debug enviroment
+    //.builtins_include = "#include \"../../include/platform-specifics/cli/builtins.h\"",
+
+    //for running in release enviroment
+    .builtins_include = "#include \"../../builtins.h\"",
+    
+    .output_path      = "./intermediate/",
+};

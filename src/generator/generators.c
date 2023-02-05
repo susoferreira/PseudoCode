@@ -201,7 +201,8 @@ sds generate_program_declarations(struct parsed_stmt statement){
     sds tipos=sdsnew("fgh");
     sds variables = generate_variable_declaration_block(parsed_variable_declaration_block_get(statement.variable_declaration_block),&tipos,&constantes);
     sds stmt_list = generate_statement_list(parsed_stmt_list_get(statement.stmt_list));
-    return sdscatprintf(sdsempty(),"//algoritmo %s\n %s\n%s\nint main(int argc,char* argv[]){\n%s\n%s}",
+    return sdscatprintf(sdsempty(),"//algoritmo %s\n %s\n%s\nint main(int argc,char* argv[]){\n%s\n%s\n\n\
+    LEER();// esta línea se añade automáticamente a todos los programas para que no se cierren al ejecutarlos directamente\n }",
     program_name,
     constantes,
     tipos,
@@ -235,6 +236,7 @@ sds generate_function_call(struct parsed_expr call){
         parameters = sdstrim(parameters,","); // remove trailing comma
         return sdscatprintf(sdsempty(),"%s(%s)",generate_expr(call.operand),parameters);
     }
+
 }
 
 
@@ -323,9 +325,11 @@ sds generate_expr(struct owl_ref expr){
         default:
         {
             char msg[200];
-            snprintf(msg,200,"error intentando generar una expresión de tipo %d\n",exp.type);
+            snprintf(msg,200,"error fatal intentando generar una expresión de tipo %d\n\
+            el programa intentará continuar pero el resultado debería ser ignorado",exp.type);
             logger(msg,LOG_ERROR);
-            exit(-1);
+            return sdsnew("//Aquí ha ocurrido un error de expresion");
+
         }
     }
 }
@@ -480,7 +484,7 @@ sds generate_for(struct parsed_stmt loop){
 
     char* stmt = generate_statement_list(parsed_stmt_list_get(loop.stmt_list));
 
-    return sdscatprintf(sdsempty(),"for(int %s = %s;%s < %s;%s=%s+%s)\n{\n%s\n}\n",
+    return sdscatprintf(sdsempty(),"for(%s = %s;%s <= %s;%s=%s+%s)\n{\n%s\n}\n",
                         var,value,var,stop,var,var,step,stmt);
 }
 
@@ -545,6 +549,9 @@ char * generate_statement_code(struct parsed_stmt statement){
         case PARSED_FOR:
             return generate_for(statement);
             break;
+        case PARSED_FOR_:
+            return generate_for(statement);
+            break;
         case PARSED_CASE:
             return generate_case(statement);
             break;
@@ -560,9 +567,10 @@ char * generate_statement_code(struct parsed_stmt statement){
         default:
         {
             char msg[200];
-            snprintf(msg, 200,"error intentando parsear un statement de tipo %d", statement.type);
+            snprintf(msg, 200,"error fatal intentando parsear un statement de tipo %d\n\
+            el programa intentará continuar pero el resultado debería ser ignorado", statement.type);
             logger(msg,LOG_ERROR);
-            exit(-1);
+            return sdsnew("//Aquí ha ocurrido un error de statement");
         }
 
     }

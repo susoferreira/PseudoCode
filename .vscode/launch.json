@@ -5,14 +5,30 @@
     "version": "0.2.0",
     "configurations": [
     
-
     {
-        "type": "by-gdb",
+        "name": "(gdb) Iniciar",
+        "type": "cppdbg",
         "request": "launch",
-        "name": "Launch(gdb)",
-        "program": "${workspaceRoot}/build/generator_cli",
-        "cwd": "${workspaceRoot}",
-        "programArgs": "${workspaceRoot}/tests/test-cosa.txt" 
-    },
+        "program": "${workspaceFolder}/build_linux/imgui_test",
+        "args": [],
+        "stopAtEntry": false,
+        "cwd": "${workspaceFolder}",
+        "environment": [],
+        "externalConsole": false,
+        "MIMode": "gdb",
+        "setupCommands": [
+            {
+                "description": "Habilitar la impresión con sangría para gdb",
+                "text": "-enable-pretty-printing",
+                "ignoreFailures": true
+            },
+            {
+                "description": "Establecer tipo de desensamblado en Intel",
+                "text": "-gdb-set disassembly-flavor intel",
+                "ignoreFailures": true
+            }
+        ]
+    }
+
 ]
 }

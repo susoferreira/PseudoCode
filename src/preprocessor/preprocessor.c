@@ -13,8 +13,8 @@ int is_do_while_start(sds *words) {
     return strcmp(words[0], "HACER") == 0;
 }
 
-int is_do_while_end(sds *words) {
-    return strcmp(words[0], "MIENTRAS") == 0;
+int is_do_while_end(sds *words,int words_size) {
+    return strcmp(words[0], "MIENTRAS") == 0 &&(words_size==1);
 }
 
 int is_struct_declaration(int words_size, sds *words) {
@@ -24,22 +24,23 @@ int is_struct_declaration(int words_size, sds *words) {
 
 //two or more spaces in a row will create this
 //words_size will be read and repurposed for the new array
-sds * remove_empty_words(sds words[],int words_size){
-    sds new_words[words_size];
+sds * remove_empty_words(sds words[],int* words_size){
+    sds new_words[*words_size];
     int counter=0;
     //str==0x00 ==> empty string
-    for (int i =0; i< words_size; i++) {
+    for (int i =0; i< *words_size; i++) {
         if(words[i][0] == 0x00){
             sdsfree(words[i]);
             continue;
         }
         new_words[counter++] = words[i];
     }
-    //copying results onto a stack allocated array
+    //copying results onto a heap allocated array
     sds* ret = malloc(sizeof (sds)*counter+1);
     for (int i=0;i<counter;i++) {
         ret[i]=new_words[i];
     }
+    *words_size=counter;
     return ret;
 }
 
@@ -65,7 +66,7 @@ sds preprocess(char* src){
 
         int words_size=0;
         sds * words = sdssplitlen(line,sdslen(line)," ",1,&words_size);
-        words = remove_empty_words(words,words_size);
+        words = remove_empty_words(words,&words_size);
 
         if (words_size==0) continue;
         
@@ -76,7 +77,7 @@ sds preprocess(char* src){
             line=sdsnew("HACER_");
         }
 
-        if (is_do_while_end(words)) {
+        if (is_do_while_end(words,words_size)) {
             sdsrange(line,sdslen(words[0]),sdslen(line)); //gets the rest of the line
             line = sdscat(line," MIENTRAS_");
         }
@@ -86,9 +87,9 @@ sds preprocess(char* src){
 
         
         if (in(typedefs,typedef_size,words[0])){
-            sds line = sdsnew(line);
+            line = sdsnew(line);
             sdsrange(line,sdslen(words[0]),sdslen(line)); //gets only the declaration(without the type)
-            line = sdscat(words[0],line);
+            line = sdscat(line,words[0]);
         }
 
         line=sdscat(line,"\n");

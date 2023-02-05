@@ -10,24 +10,17 @@
 #include "utils.h"
 #include "logger.h"
 #include "config.h"
-
+#include "generator.h"
 #define OWL_PARSER_IMPLEMENTATION
 #include "parser.h"
 
-//preprocesses a file,saves output to another file and returns string 
-char* preprocess_file(char *src,char* file_path){
-    sds result = preprocess(src);
+/* this file contains the functions used to preprocess and parse pseudocode into c++*/
+/*should be used as main 'library' for the platforms to interface with the code*/
 
-    FILE *out = fopen(sdscat(sdsnew("./intermediate/preprocessor/"),basename(file_path)),"w");
-    if(out == NULL) {
-        logger("file couldn't be opened",LOG_ERROR);
-        exit(-1);
-    }
-    fclose(out);
-    return result;
-}
 
-bool handle_parse_errors(struct owl_tree* tree){
+
+/*logs parsing errors*/
+static bool handle_parse_errors(struct owl_tree* tree){
     char msg[200];
 
     switch (tree->error) {
@@ -56,29 +49,27 @@ bool handle_parse_errors(struct owl_tree* tree){
     }
 }
 
+/*applies parser,preprocessor and generator, organizes source (main into main function)
+ * and returns everything by reference
+ */
+bool generate_from_file(char * file_path ,sds* processed, sds* src,sds* generated_program,struct owl_tree** tree){
+    *src = read_file(file_path);
+    return generate_from_string(*src,processed,generated_program,tree);
+}
 
-int main(int argc, char* argv[])
-{
-    struct owl_tree *tree;
- 
-    
-    if (argc < 2) {
-        printf("Uso: generator <archivo>\n");
-        exit(-1);
-    }
-
-    char* src = read_file(argv[1]);
-    sds processed = preprocess_file(src,argv[1]);
-
-    tree = owl_tree_create_from_string(processed);
-
-
-    if (handle_parse_errors(tree)){   
-        exit(-1);
-    }
-
-
-    struct parsed_program  program = owl_tree_get_parsed_program(tree);
+/*applies parser,preprocessor and generator, organizes source (main into main function)
+ * and returns everything by reference
+ * returns true when no errors have been found, returns true when parse error has been found
+ */
+bool generate_from_string(char* src,sds* processed,sds* generated_program,struct owl_tree** tree){
+   *processed = preprocess(src);
+   printf("texto preprocesado:\n%s\n",*processed);
+    *tree = owl_tree_create_from_string(*processed);
+    //logs errors if there are any
+    if (handle_parse_errors(*tree)){
+        return false;
+    } 
+    struct parsed_program  program = owl_tree_get_parsed_program(*tree);
     struct parsed_stmt_list stmt_list = parsed_stmt_list_get(program.stmt_list);
 
     //guardamos el main (primer statement del programa)
@@ -87,18 +78,9 @@ int main(int argc, char* argv[])
     stmt_list.stmt = owl_next(stmt_list.stmt);    
 
     //resto del programa (funciones)
-    sds  generated_program = sdscatprintf(sdsempty(),"%s\n",generate_statement_list(stmt_list));
-    printf("\"%s\"\n%s\n%s\n",conf.builtins_include,generated_program,main);
-    owl_tree_destroy(tree);
+    *generated_program = sdscatprintf(sdsempty(),"%s\n",generate_statement_list(stmt_list));
 
-    char outfile[500]="";
-    snprintf(outfile,500,"./intermediate/generator/%s.cpp",basename(argv[1]));
-    FILE* output = fopen(outfile,"w");
-
-    //builtins_include se define según la plataforma
-    fprintf(output,"\"%s\"\n%s\n%s\n",conf.builtins_include,generated_program,main);
-    
-
-    free(src);
-    return 0;
+    //añadimos el main con el include al resto de las funciones
+    *generated_program=sdscatprintf(sdsempty(),"%s\n%s\n%s\n\n",conf.builtins_include,*generated_program,main);
+    return true;
 }

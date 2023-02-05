@@ -49,7 +49,7 @@ Se incluye un script ```./scripts/ejecutar_fichero.sh``` que aplica el generador
 
 ## Uso como librería
 
-La sintáxis del generador es la siguiente: ``` generator <nombre fichero>```, aplicará el preprocesador al fichero, guardará el texto preprocesado en ```./intermediate/preprocessor/<nombre fichero>```, y generará el código c++ en ````./intermediate/generator/<nombre fichero> ```.  
+
 
 ## Disclaimer
 

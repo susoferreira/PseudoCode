@@ -73,7 +73,7 @@
     },
     "clangd.arguments": [
         "-background-index",
-        "-compile-commands-dir=/run/media/suso/SHARE/Programación/c++/PseudoCode/build"
+        "-compile-commands-dir=/run/media/suso/SHARE/Programacion/c++/PseudoCode/build_linux",
     ],
     "mesonbuild.configureOnOpen": true
 }

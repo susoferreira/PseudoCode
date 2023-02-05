@@ -21,6 +21,7 @@ stmt =
     [ 'MIENTRAS' expr 'HACER' stmt-list 'FIN_MIENTRAS' ] : while
     [ 'HACER_' stmt-list  newline expr  'MIENTRAS_' ] : do-while
     [ 'DESDE' (identifier@var '<-')? expr@value 'HASTA'  expr   ('PASO' expr@step)? "HACER" stmt-list 'FIN_DESDE' ] : for
+    [ 'PARA' (identifier@var '<-')? expr@value 'HASTA'  expr   ('PASO' expr@step)? "HACER" stmt-list 'FIN_PARA' ] : for_
     ['CASO' expr 'SEA' newline (expr@val ':'  stmt-list newline )* ('SI_NO' ':'? stmt-list@case_default) newline 'FIN_CASO']: case
     'break' : break
     'continue' : continue
@@ -53,8 +54,8 @@ size-range = expr@start '..' expr@end
 expr =
     string : string
     number : number
-    'true' : true
-    'false' : false
+    'VERDADERO' : true
+    'FALSO' : false
     identifier : variable
     [ '(' expr? ')' ] : parens
     [ '{' (expr{',',1+} ','?)? '}' ] : array-values
