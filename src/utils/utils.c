@@ -26,7 +26,20 @@ int filesize(FILE* file){
     return size;
 }
 
-bool file_exists (char *filename) {
+
+
+
+
+void forward_to_backslash(char* str){
+    for (int i =0; str[i]!=0x00;i++) {
+        if (str[i]=='/'){
+            str[i]='\\';
+        }
+    }
+}
+
+
+bool file_exists(char *filename) {
   struct stat   buffer;   
   return (stat (filename, &buffer) == 0);
 }

@@ -34,7 +34,7 @@ extern "C" {
 // examples: cmd.exe/c '%s;echo ejecucion finalizada;pause' (in windows) xterm -e '%s;echo ejecución finalizada;read' 
 // read and pause are probably redundant because generated programs already have LEER as last line 
 //
-char* get_terminal_emulator(){
+const char* get_terminal_emulator(){
     #if defined WIN32 || defined _WIN32 || defined WIN64 || defined _WIN64
         return "start cmd.exe /c \"%s & echo ejecucion finalizada & pause\"";
     #endif
@@ -335,11 +335,24 @@ static void render_cppeditor(TextEditor& editor,TextEditor& logEditor, TextEdito
         ImGui::SameLine();
         if (!can_execute()) ImGui::BeginDisabled(); 
         if(ImGui::Button("Ejecutar programa")){
-            char* command = get_terminal_emulator();
+            const char* command = get_terminal_emulator();
             char buf[strlen(command)+200];
             sds file = sdscat(sdsnew(get_exe_path()),"out.cpp");
+
+
             snprintf(buf,strlen(command)+200,command,file);
-            system(buf);
+            
+            #if defined WIN32 || defined _WIN32 || defined WIN64 || defined _WIN64
+                // me cago en windows, soporta / en unas funciones y en otras no
+                forward_to_backslash(buf);
+            #endif
+
+            FILE* exe = popen(buf,"r");
+            printf("comando usado para ejecutar el programa: %s",buf);
+
+
+            pclose(exe);
+            
         }
         if (!can_execute()) ImGui::EndDisabled();
 
@@ -352,7 +365,7 @@ static void render_cppeditor(TextEditor& editor,TextEditor& logEditor, TextEdito
         char* compiler = used_compiler();
 
         if (compiler){
-            ImGui::Text("Compilador encontrado: %s",compiler);
+            ImGui::Text("Compilador que se intentará usar: %s",compiler);
         }else{
             ImGui::Text("No se ha encontrado el compilador");
         }

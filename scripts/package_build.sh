@@ -32,14 +32,14 @@ cp ./include/platform-specifics/cli/builtins.h $path/builtins.h
 
 
 #copy executables
-for filename in "generator_tui" "imgui_test";do
+for filename in "generator_tui" "generator_gui";do
     cp ./build_$os/$filename$exe $path
 done
 
 #find dlls and copy them to release
 if [ $os = "windows" ];then
 
-    mv "./scripts/descargar_compilador.ps1" $path/descargar_compilador.ps1 
+    cp "./scripts/descargar_compilador.ps1" $path/descargar_compilador.ps1 
 
     for i in  $(find ./build_windows/subprojects/ -name "*.dll");do
         cp $i $path/$(basename $i)
@@ -52,6 +52,8 @@ if [ $os = "windows" ];then
     done
 fi
 
+build_save=$PWD/build_$os.zip
+cd $path
 
-rm ./build_$os.zip
-zip -r ./build_$os.zip $path/*
+rm $build_save
+zip -r $build_save ./*

@@ -33,7 +33,7 @@ gui_src=[
 gl=dependency('gl')
 glfw_dep = subproject('glfw').get_variable('glfw_dep')
 imgui = subproject('imgui').get_variable('imgui_dep')
-executable('imgui_test','platform-specifics/gui/gui_opengl.cpp',
+executable('generator_gui','platform-specifics/gui/gui_opengl.cpp',
         'platform-specifics/gui/ImGuiColorTextEdit/TextEditor.cpp',
         gui_src,sources,sds_src,
         include_directories : [incdir], # hay que incluir sds

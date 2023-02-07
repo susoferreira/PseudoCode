@@ -249,8 +249,10 @@ sds generate_expr(struct owl_ref expr){
             break;
         case PARSED_NUMBER:
             number = parsed_number_get(exp.number).number;
-            if (number == (int) number) return sdscatprintf(sdsempty(),"%d", (int) number);
-            else return sdscatprintf(sdsempty(),"%f", number);
+            if (number == (int) number)
+                return sdscatprintf(sdsempty(),"%d", (int) number);
+            else
+                return sdscatprintf(sdsempty(),"%f", number);
             break;
         case PARSED_TRUE:
             return sdsnew("true");

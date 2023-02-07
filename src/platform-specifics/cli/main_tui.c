@@ -113,11 +113,18 @@ sds get_str_in(char* prompt,bool optional){
 void op4(sds file){
     compile(file);
 
+    if (!can_execute()){
+        logger("se han producido errores de compilación",LOG_ERROR);
+        return;
+    }
+
     logger("Compilación realizada sin errores\n",LOG_INFO);
     printf("%s","presiona una tecla para ejecutar el código\n\n");
     get_ch_in();
+
     sds exe = sdscat(get_exe_path(),file);
     system(exe);
+
     printf("\n\n");
 }
 
