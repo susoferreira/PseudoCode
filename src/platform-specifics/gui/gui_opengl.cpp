@@ -337,15 +337,11 @@ static void render_cppeditor(TextEditor& editor,TextEditor& logEditor, TextEdito
         if(ImGui::Button("Ejecutar programa")){
             const char* command = get_terminal_emulator();
             char buf[strlen(command)+200];
+
             sds file = sdscat(sdsnew(get_exe_path()),"out.cpp");
 
 
             snprintf(buf,strlen(command)+200,command,file);
-            
-            #if defined WIN32 || defined _WIN32 || defined WIN64 || defined _WIN64
-                // me cago en windows, soporta / en unas funciones y en otras no
-                forward_to_backslash(buf);
-            #endif
 
             FILE* exe = popen(buf,"r");
             printf("comando usado para ejecutar el programa: %s",buf);

@@ -111,6 +111,10 @@ void compile(char* filename){
 char* get_exe_path(){
     if (exe_path==NULL){
         exe_path=sdscat(sdsnew(conf.output_path),"compiled/");
+            #if defined WIN32 || defined _WIN32 || defined WIN64 || defined _WIN64
+                // me cago en windows, soporta / en unas funciones y en otras no
+                forward_to_backslash(exe_path);
+            #endif
     }
     return exe_path;
  
@@ -124,5 +128,5 @@ char* used_compiler(){
 }
 //returns wether the compilation was succesful or not
 bool can_execute(){
-    return is_executable;
+    return is_executable; 
 }
