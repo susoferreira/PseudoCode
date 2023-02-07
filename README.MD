@@ -2,8 +2,10 @@
 
 Este repositorio contiene un programa para transformar pseudocódigo a código equivalente en c++ (usando mayoritariamente características de C) que sea legible por humanos para poder comparar ambos. Actualmente **aún no está terminado**. la transformación ocurre en 3 subprocesos:
 
-#### Cosas que no funcionan actualmente
+## Cosas que no funcionan actualmente
 - Asignar un literal a una ```CADENA``` despues de inicializarla:
+
+  
 
   ```
   VARIABLES
@@ -13,43 +15,57 @@ Este repositorio contiene un programa para transformar pseudocódigo a código e
   FIN
   ```
 
-- ~~Bucles HACER-MIENTRAS (do-while)~~
+  (una manera de arreglar esto es modificar el código generado **manualmente** de la siguiente forma)
 
-- Agradezco todos los reportes de bugs 
+  ``` c
+  Cadena uwu ="owo" => Cadena uwu =(char*)"owo"
+  ```
+  
 
-## Parser
+- Abrir y cerrar ficheros (WIP)
 
-Es un parser generado usando el programa [owl](https://github.com/ianh/owl), la definición de la gramática usada se puede encontrar en ```grammar.owl```. Actualmente está mayoritariamente completo, aunque le faltan algunas características,como los bucles HACER-MIENTRAS
-
-## Preprocesador
-
-Modifica ligeramente el pseudocódigo antes de ser parseado para que sea posible usar owl, dado a limitaciones por diseño del programa. Se encuentra básicamente completado. Los ficheros preprocesados se guardan en ```intermediate/preprocessor/<nombre_fichero>```
-
-## Generador
-
-Transforma el [AST](https://en.wikipedia.org/wiki/Abstract_syntax_tree) generado por el parser en código C++. Es la parte que menos completa está del programa y con más bugs
-
-##### Legibilidad del código 
+## Legibilidad del código 
 
 uno de los futuros objetivos para este proyecto es que el código sea razonablemente legible (indentación y estilo ) por humanos, actualmente esto no se cumple, por lo que es recomendable usar la función ```Formatear código``` de una IDE o un formateador de código (online o ejecutable como ```clang-format```)  si se pretende leer el código generado 
 
 
-
-## Setup
-
-El proyecto usa el sistema de construcción [Meson](https://mesonbuild.com) con el directorio de compilación ```./build```
-
-Para compilarlo se deben tener Meson instalado y owl descargado en la raíz del proyecto, generar el parser  con ```./generate_parser.sh``` y usar ```meson compile -C ./build```, Se generará el ejecutable ```build/generator``` 
-
-Cada vez que se modifique ```grammar.owl``` se debe regenerar el parser y recompilar el proyecto
-
 ## Uso
+Para usarlo basta con descargar la última release y ejecutar ```generator_tui```(interfaz de línea de comandos)  o ```generator_gui``` (interfaz gráfica), generator_tui da problemas en windows por problemas con el locale (lee memoria basura por algún motivo), se puede probar a ejecutarlo desde powershell o **(recomendado)** usar la interfaz gráfica.
 
-Se incluye un script ```./scripts/ejecutar_fichero.sh``` que aplica el generador a un fichero, compila y ejecuta el código generado, puede que se deba abrir el script con un editor de texto y modificar la ruta del compilador
+Para usar la opción de compilar el código se debe tener instalado g++ en linux, en windows ejecutar el script ```descargar_compilador.ps1``` descargará un entorno de desarrollo **mínimo y completamente portable** sin hacer modificaciones al sistema,lo que permitirá al proyecto usarlo para compilar
+
+## Errores
+Un error al generar el código c++ significa un error de parseo (el pseudocódigo está mal formado, faltan palabras clave, falta la palabra ALGORITMO...)
+
+Un error al compilar el código significa que el programa está mal escrito aunque tenga la estructura correcta, por lo general los errores que da el compilador sobre el c++ son bastante fáciles de relacionar con el pseudocódigo que los generó y arreglarlos.
+
+Un error que no debería estar ahi (error de parser cuando el código está bien formado o error de compilación cuando el pseudocódigo es válido) es motivo suficiente para [abrir una issue](https://github.com/susoferreira/PseudoCode/issues/new)( por favor, reportad issues y no espereis a que otra persona lo haga :) )
+
+## Compilar desde código fuente
+
+El proyecto usa el sistema de construcción [Meson](https://mesonbuild.com)
+
+- Para crear un directorio de compilación se usa ```cd src; meson setup <directorio de la build>```
+- Para compilarlo despues del setup basta con ```meson compile .c <directorio de la build>```
+- En ```scripts``` se guardan distintos scripts para facilitar la build
+- Si se modifica ```grammar.owl``` se debe usar el comando ```owl -c grammar.owl >parser.h```
+- Al ejecutar el programa sin generar una release con ./scripts/package_build puede que el ejecutable no encuentre distintos archivos, esto se debe a que la estructura de ficheros es distinta en las releases que en el proyecto, se puede arreglar enlazando los archivos que busca a la raíz del proyecto o cambiando la ruta de busqueda (```config.c```), también, en windows **se deberán copiar los dll que genera ```./scripts/package_build windows``` al directorio de la build**
+- para enlazar los archivos se puede usar ```ln ./include/platform-specifics/cli/builtins.h builtins.h``` y **descargar [w64devkit](https://github.com/skeeto/w64devkit/releases)** en la raíz del proyecto, ya sea mediante github o mediante ```./scripts/descargar_compilador.ps1```
+- Para  hacer _cross-compilation_ desde linux a windows se puede usar ```cd src; meson setup ../build_windows --cross-file ../cross_compilation.ini``` (requiere mingw-64), para otros targets, se puede ver la documentacion de **Meson**, no es demasiado difícil 
+
 
 ## Uso como librería
 
+El programa que transforma pseudocódigo en c++ se encuentra en ```./generator.c``` ,```./generators.c```, se debe proveer una implementación propia de ```logger.c``` y ```config.c```. 
+> Se recomienda usar una de las implementaciones en ```./src/platform-specifics``` y sus respectivas lineas de _executable_ en ```meson.build``` de ejemplo
 
+
+### Librerías usadas:
+- [sds](https://github.com/antirez/sds/) (strings dinámicos en c)
+- [owl](https://github.com/ianh/owl)
+- [Dear ImGui](https://github.com/ocornut/imgui) (interfaz gráfica)
+- [ImGuiColorTextEdit](https://github.com/BalazsJako/ImGuiColorTextEdit) (editor de texto con _syntax highlighting_ para imgui)
+- [GLFW3](https://www.glfw.org/) (Renderer para imgui)
 
 ## Disclaimer
 
